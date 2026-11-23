@@ -11,7 +11,42 @@ from autogen_core.utils._json_to_pydantic import (
     UnsupportedKeywordError,
     _JSONSchemaToPydantic,  # pyright: ignore[reportPrivateUsage]
 )
-from pydantic import BaseModel, EmailStr, Field, Json, ValidationError
+from pydantic import UUID4, BaseModel, EmailStr, Field, Json, ValidationError
+
+
+@pytest.mark.parametrize("version", [1, 3, 4, 5, 7])
+def test_generic_uuid_format_accepts_all_uuid_versions(version: int) -> None:
+    from autogen_core.utils import schema_to_pydantic_model
+
+    class Record(BaseModel):
+        id: UUID
+
+    identifier = UUID(f"12345678-1234-{version}234-9234-123456789abc")
+    converted = schema_to_pydantic_model(Record.model_json_schema())
+    assert converted.model_validate_json(Record(id=identifier).model_dump_json()).id == identifier
+
+
+def test_generic_uuid_format_rejects_invalid_uuid() -> None:
+    from autogen_core.utils import schema_to_pydantic_model
+
+    model = schema_to_pydantic_model(
+        {"type": "object", "properties": {"id": {"type": "string", "format": "uuid"}}, "required": ["id"]}
+    )
+    with pytest.raises(ValidationError):
+        model.model_validate({"id": "not-a-uuid"})
+
+
+def test_version_specific_uuid_format_keeps_version_constraint() -> None:
+    from autogen_core.utils import schema_to_pydantic_model
+
+    class Record(BaseModel):
+        id: UUID4
+
+    converted = schema_to_pydantic_model(Record.model_json_schema())
+    identifier = UUID("12345678-1234-4234-9234-123456789abc")
+    assert converted.model_validate_json(Record(id=identifier).model_dump_json()).id == identifier
+    with pytest.raises(ValidationError):
+        converted.model_validate({"id": "12345678-1234-1234-9234-123456789abc"})
 
 
 # ✅ Define Pydantic models for testing

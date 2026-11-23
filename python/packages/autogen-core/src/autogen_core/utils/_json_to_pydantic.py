@@ -1,6 +1,7 @@
 import datetime
 from ipaddress import IPv4Address, IPv6Address
 from typing import Annotated, Any, Dict, ForwardRef, List, Literal, Optional, Type, Union, cast
+from uuid import UUID
 
 from pydantic import (
     UUID1,
@@ -57,7 +58,7 @@ TYPE_MAPPING: Dict[str, Type[Any]] = {
 }
 
 FORMAT_MAPPING: Dict[str, Any] = {
-    "uuid": UUID4,
+    "uuid": UUID,
     "uuid1": UUID1,
     "uuid2": UUID4,
     "uuid3": UUID3,
